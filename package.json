@@ -17,6 +17,7 @@
     "express": "^4.13.4",
     "https": "^1.0.0",
     "node-fetch": "^1.7.3",
+    "node-schedule": "^1.2.5",
     "request": "^2.72.0"
   }
 }

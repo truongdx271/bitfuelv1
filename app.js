@@ -1,6 +1,6 @@
 'use strict';
 // const PAGE_ACCESS_TOKEN = process.env.PAGE_ACCESS_TOKEN;
-const PAGE_ACCESS_TOKEN = "EAAaHZCCTS0ZBwBAIF67rv2Pq4rZBWDTeI6RajrjZCuLND3tKyiNvXrApbuDOiiDP4WZAM8tqfP54JrjjRl7EXjFHDo56kZBHzpB1XBrFMW6QxjgLn8zzbYcaU3me44pXhBSWzyi13utQUZCAZAgLdw0nQdyK2cqHZCSYvr4DtVN5mwgZDZD";
+const PAGE_ACCESS_TOKEN = "EAAaHZCCTS0ZBwBAFYuCuXSFUJN9w1jZBoz9tlvTSIOZAWRfrASpw25rkWjj4llZA0BFZCCxtIMqKP5ZCh5QXBm9eu54sw9cHw21FU5K5DRa8Sq45dGHx2LZBJ6vS40h6W254pdaTqvtTGpWE4osEU69oTm7DXjPZAXW9tqClAHGdqXAZDZD";
 // Imports dependencies and set up http server
 const
   request = require('request'),
@@ -8,10 +8,14 @@ const
   body_parser = require('body-parser'),
   https_request = require('https'),
   fetch = require('node-fetch'),
+  schedule = require('node-schedule'),
   app = express().use(body_parser.json()); // creates express http server
 
 // Sets server port and logs message on success
 app.listen(process.env.PORT || 1337, () => console.log('webhook is listening'));
+
+//create listen user
+let list_sender_psid = [];
 
 // Accepts POST requests at /webhook endpoint
 app.post('/webhook', (req, res) => {
@@ -95,6 +99,51 @@ app.get('/webhook', (req, res) => {
   }
 });
 
+function handleAutoMessage() {
+  console.log(list_sender_psid);
+  let response;
+  let data;
+  let url_request = "https://api.coinmarketcap.com/v1/ticker/bitconnect/";
+  let body = "";
+
+  try {
+    https_request.get(url_request, res => {
+      res.setEncoding('utf8');
+      res.on("data", data => {
+        body += data;
+      });
+      if (typeof body !== "undefined" || body !== null) {
+        res.on("end", () => {
+          body = JSON.parse(body);
+          if (body !== null || typeof body !== "undefined") {
+            let cryptName = body[0].name;
+            let cryptPrice = body[0].price_usd;
+            let percent_change_1h = body[0].percent_change_1h;
+            let text2send = `${cryptName}\nPrice: ${cryptPrice}\nChange: ${percent_change_1h}%`;
+            response = {
+              "text": text2send
+            }
+            console.log(response);
+            for (let i = 0; i < list_sender_psid.length; i++) {
+              callSendAPI(list_sender_psid[i], response);
+            }
+          } else {
+            response = {
+              "text": `Something went wrong!!!`
+            }
+          }
+        });
+      }
+    });
+  } catch (error) {
+    console.log(error);
+  }
+
+  setTimeout(handleAutoMessage, 300 * 1000);
+}
+
+
+
 function handleMessage(sender_psid, received_message) {
   let response;
   let data;
@@ -130,14 +179,95 @@ function handleMessage(sender_psid, received_message) {
           }
         });
       });
-    } else {
+    } else if (received_message.text == 'subcribe') {
       response = {
-        "text": `Try some valid name!`
+        "text": "Subcribed bitconnect exchange!"
+      };
+      callSendAPI(sender_psid, response);
+      //add to auto send list
+      addUser(sender_psid);
+      handleAutoMessage();
+    } else if (received_message.text == 'unsubcribe') {
+      response = {
+        "text": "Unsubcribed!!!"
+      };
+      removeUser(sender_psid);
+      callSendAPI(sender_psid, response);
+    } else if (!isNaN(received_message.text)){
+      let url_request = "https://api.coinmarketcap.com/v1/ticker/?start=" + (received_message.text-1) + "&limit=1";
+      let body = "";
+      https_request.get(url_request, res => {
+        res.setEncoding('utf8');
+        res.on("data", data => {
+          body += data;
+        });
+        res.on("end", () => {
+          if (body !== null || typeof body !== "undefined") {
+            body = JSON.parse(body);
+            let cryptName = body[0].name;
+            let cryptPrice = body[0].price_usd;
+            let percent_change_1h = body[0].percent_change_1h;
+            let percent_change_24h = body[0].percent_change_24h;
+            let percent_change_7d = body[0].percent_change_7d;
+            let rank = body[0].rank;
+            let last_updated = convertUnixTime(body[0].last_updated);
+            let text2send = `${cryptName}\nPrice: ${cryptPrice}\nChange: ${percent_change_1h}%\nRank: ${rank}\nLast updated: ${last_updated}`;
+            response = {
+              "text": text2send
+            }
+            console.log(response);
+            callSendAPI(sender_psid, response);
+          } else {
+            response = {
+              "text": `Something went wrong!!!`
+            }
+          }
+        });
+      });
+    } else if(checktop(received_message.text)===0){
+      var input = received_message.text;
+      let numofinput = input.split(" ")[1];
+      let url_request = "https://api.coinmarketcap.com/v1/ticker/?limit="+numofinput;
+      let body = "";
+      https_request.get(url_request, res => {
+        res.setEncoding('utf8');
+        res.on("data", data => {
+          body += data;
+        });
+        res.on("end", () => {
+          if (body !== null || typeof body !== "undefined") {
+            body = JSON.parse(body);
+            let text2send="";
+            for(let i =0; i<body.length;i++){
+              let cryptName = body[i].name;
+              let cryptPrice = body[i].price_usd;
+              let percent_change_1h = body[i].percent_change_1h;
+              let rank = body[i].rank;
+              let text2cur = `${cryptName}\nPrice: ${cryptPrice}\nChange: ${percent_change_1h}%\nRank: ${rank}`;
+              text2send+=text2cur+"\n======\n";
+            }
+            response = {
+              "text": text2send
+            }
+            console.log(response);
+            callSendAPI(sender_psid, response);
+          } else {
+            response = {
+              "text": `Something went wrong!!!`
+            }
+          }
+        });
+      });
+    }
+    else {
+      response = {
+        "text": `Welcome to Clown9\n - Type \"subcribe\" to get BitConnect exchange every 5 minutes\n - Type \"bitcoin\",\"bitconnect\",\"ripple\",\"ethereum\",\"bitcoin-cash\"\n- Type a number to get the one at that rank`
       }
+      callSendAPI(sender_psid, response);
     }
   }
   // Send the response message
-  callSendAPI(sender_psid, response);
+
 }
 
 function handlePostback(sender_psid, received_postback) {
@@ -158,6 +288,39 @@ function handlePostback(sender_psid, received_postback) {
   }
   // Send the message to acknowledge the postback
   callSendAPI(sender_psid, response);
+}
+
+function addUser(userId) {
+  var pos = list_sender_psid.indexOf(userId);
+  if (pos < 0) {
+    list_sender_psid.push(userId);
+  }
+}
+
+function removeUser(userId) {
+  var pos = list_sender_psid.indexOf(userId);
+  if (pos >= 0) {
+    list_sender_psid.splice(pos, 1);
+  }
+}
+
+function checktop(input){
+  var pattern = /(top)[/\s][/\d]/g;
+  var result = input.search(pattern);
+  return result;
+}
+
+function convertUnixTime(input){
+  var a = new Date(input*1000);
+  var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  var year = a.getFullYear();
+  var month = months[a.getMonth()];
+  var date = a.getDate();
+  var hours = a.getHours();
+  var minutes = a.getMinutes();
+  var seconds = a.getSeconds();
+  var time = date + ' ' + month + ' '+ year + ' ' + hours +':'+minutes+':'+seconds;
+  return(time);
 }
 /*
 function getMarketDataAPI(cName) {
