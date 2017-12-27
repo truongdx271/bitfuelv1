@@ -16,6 +16,8 @@ app.listen(process.env.PORT || 1337, () => console.log('webhook is listening'));
 
 //create listen user
 let list_sender_psid = [];
+let list_coin = ['Bitcoin', 'Ethereum', 'Ripple', 'Bitcoin Cash', 'Litecoin', 'Cardano', 'IOTA', 'Dash', 'NEM', 'Monero', 'EOS', 'Bitcoin Gold', 'NEO', 'Stellar', 'Qtum', 'Ethereum Classic', 'Lisk', 'TRON', 'BitConnect', 'Verge', 'Zcash', 'Ardor', 'Hshare', 'OmiseGO', 'BitShares', 'ICON', 'Nxt', 'Waves', 'Stratis', 'Populous', 'RaiBlocks', 'Tether', 'Bytecoin', 'Dogecoin', 'Komodo', 'Binance Coin', 'Siacoin', 'Augur', 'Steem', 'Ark', 'Golem', 'SALT', 'PIVX', 'Veritaseum', 'MonaCoin', 'DigiByte', 'Decred', 'Status', 'VeChain', 'ZCoin', 'Syscoin', 'MaidSafeCoin', 'TenX', 'Electroneum', 'Byteball Bytes', 'ReddCoin', 'Basic Attention Token', 'Bytom', 'Factom', 'BitcoinDark', 'Santiment Network Token', 'DigixDAO', 'Aeternity', 'QASH', '0x', 'Civic', 'Kyber Network', 'Power Ledger', 'Aion', 'Dent', 'Vertcoin', 'Walton', 'GameCredits', 'Substratum', 'Gas', 'NAV Coin', 'aelf', 'Dentacoin', 'Skycoin', 'Gnosis', 'FunFair', 'GXShares', 'Cryptonex', 'Iconomi', 'BitBay', 'Enigma', 'Monaco', 'Dragonchain', 'Bancor', 'Request Network', 'Raiden Network Token', 'Ethos', 'Decentraland', 'AdEx', 'Nexus', 'Einsteinium', 'Ripio Credit Network', 'Edgeless', 'Blocknet', 'ChainLink'];
+let list_symbol = ['BTC', 'ETH', 'XRP', 'BCH', 'LTC', 'ADA', 'MIOTA', 'DASH', 'XEM', 'XMR', 'EOS', 'BTG', 'NEO', 'XLM', 'QTUM', 'ETC', 'LSK', 'TRX', 'BCC', 'XVG', 'ZEC', 'ARDR', 'HSR', 'OMG', 'BTS', 'ICX', 'NXT', 'WAVES', 'STRAT', 'PPT', 'XRB', 'USDT', 'BCN', 'DOGE', 'KMD', 'BNB', 'SC', 'REP', 'STEEM', 'ARK', 'GNT', 'SALT', 'PIVX', 'VERI', 'MONA', 'DGB', 'DCR', 'SNT', 'VET', 'XZC', 'SYS', 'MAID', 'PAY', 'ETN', 'GBYTE', 'RDD', 'BAT', 'BTM', 'FCT', 'BTCD', 'SAN', 'DGD', 'AE', 'QASH', 'ZRX', 'CVC', 'KNC', 'POWR', 'AION', 'DENT', 'VTC', 'WTC', 'GAME', 'SUB', 'GAS', 'NAV', 'ELF', 'DCN', 'SKY', 'GNO', 'FUN', 'GXS', 'CNX', 'ICN', 'BAY', 'ENG', 'MCO', 'DRGN', 'BNT', 'REQ', 'RDN', 'ETHOS', 'MANA', 'ADX', 'NXS', 'EMC2', 'RCN', 'EDG', 'BLOCK', 'LINK'];
 
 // Accepts POST requests at /webhook endpoint
 app.post('/webhook', (req, res) => {
@@ -60,12 +62,6 @@ app.post('/webhook', (req, res) => {
 //test here
 
 app.get('/', (req, res) => {
-  let coin = "bitcoin";
-  // let testdata = {};
-  // let testdata = getMarketDataAPI(coin);
-  // console.log(testdata)
-  // let testdata = fetchDataAPI(coin);
-  // console.log(testdata);
   res.json({
     message: 'Welcome to the api'
   });
@@ -139,7 +135,7 @@ function handleAutoMessage() {
     console.log(error);
   }
 
-  setTimeout(handleAutoMessage, 300 * 1000);
+  setTimeout(handleAutoMessage, 330 * 1000);
 }
 
 
@@ -151,9 +147,8 @@ function handleMessage(sender_psid, received_message) {
   if (received_message.text) {
     // Create the payload for a basic text message, which
     // will be added to the body of our request to the Send API
-    if (received_message.text == "bitconnect" || received_message.text == "bitcoin" || received_message.text == "ethereum" || received_message.text == "ripple" || received_message.text == "bitcoin-cash") {
-
-      let url_request = "https://api.coinmarketcap.com/v1/ticker/" + received_message.text + "/";
+    if (list_coin.indexOf(lowerString(received_message.text)) >= 0) {
+      let url_request = "https://api.coinmarketcap.com/v1/ticker/" + lowerString(received_message.text) + "/";
       let body = "";
       https_request.get(url_request, res => {
         res.setEncoding('utf8');
@@ -161,12 +156,9 @@ function handleMessage(sender_psid, received_message) {
           body += data;
         });
         res.on("end", () => {
-          body = JSON.parse(body);
           if (body !== null || typeof body !== "undefined") {
-            let cryptName = body[0].name;
-            let cryptPrice = body[0].price_usd;
-            let percent_change_1h = body[0].percent_change_1h;
-            let text2send = `${cryptName}\nPrice: ${cryptPrice}\nChange: ${percent_change_1h}%`;
+            body = JSON.parse(body);
+            let text2send = createMessageViaBody(body);
             response = {
               "text": text2send
             }
@@ -179,7 +171,7 @@ function handleMessage(sender_psid, received_message) {
           }
         });
       });
-    } else if (received_message.text == 'subcribe') {
+    } else if (lowerString(received_message.text) == 'subcribe') {
       response = {
         "text": "Subcribed bitconnect exchange!"
       };
@@ -187,14 +179,14 @@ function handleMessage(sender_psid, received_message) {
       //add to auto send list
       addUser(sender_psid);
       handleAutoMessage();
-    } else if (received_message.text == 'unsubcribe') {
+    } else if (lowerString(received_message.text) == 'unsubcribe') {
       response = {
         "text": "Unsubcribed!!!"
       };
       removeUser(sender_psid);
       callSendAPI(sender_psid, response);
-    } else if (!isNaN(received_message.text)){
-      let url_request = "https://api.coinmarketcap.com/v1/ticker/?start=" + (received_message.text-1) + "&limit=1";
+    } else if (!isNaN(received_message.text)) {
+      let url_request = "https://api.coinmarketcap.com/v1/ticker/?start=" + (received_message.text - 1) + "&limit=1";
       let body = "";
       https_request.get(url_request, res => {
         res.setEncoding('utf8');
@@ -204,14 +196,7 @@ function handleMessage(sender_psid, received_message) {
         res.on("end", () => {
           if (body !== null || typeof body !== "undefined") {
             body = JSON.parse(body);
-            let cryptName = body[0].name;
-            let cryptPrice = body[0].price_usd;
-            let percent_change_1h = body[0].percent_change_1h;
-            let percent_change_24h = body[0].percent_change_24h;
-            let percent_change_7d = body[0].percent_change_7d;
-            let rank = body[0].rank;
-            let last_updated = convertUnixTime(body[0].last_updated);
-            let text2send = `${cryptName}\nPrice: ${cryptPrice}\nChange: ${percent_change_1h}%\nRank: ${rank}\nLast updated: ${last_updated}`;
+            let text2send = createMessageViaBody(body);
             response = {
               "text": text2send
             }
@@ -224,10 +209,10 @@ function handleMessage(sender_psid, received_message) {
           }
         });
       });
-    } else if(checktop(received_message.text)===0){
+    } else if (checktop(lowerString(received_message.text)) === 0) {
       var input = received_message.text;
       let numofinput = input.split(" ")[1];
-      let url_request = "https://api.coinmarketcap.com/v1/ticker/?limit="+numofinput;
+      let url_request = "https://api.coinmarketcap.com/v1/ticker/?limit=" + numofinput;
       let body = "";
       https_request.get(url_request, res => {
         res.setEncoding('utf8');
@@ -237,15 +222,17 @@ function handleMessage(sender_psid, received_message) {
         res.on("end", () => {
           if (body !== null || typeof body !== "undefined") {
             body = JSON.parse(body);
-            let text2send="";
-            for(let i =0; i<body.length;i++){
+            let text2send = "";
+            for (let i = 0; i < body.length; i++) {
               let cryptName = body[i].name;
+              let symbol = body[i].symbol;
               let cryptPrice = body[i].price_usd;
               let percent_change_1h = body[i].percent_change_1h;
               let rank = body[i].rank;
-              let text2cur = `${cryptName}\nPrice: ${cryptPrice}\nChange: ${percent_change_1h}%\nRank: ${rank}`;
-              text2send+=text2cur+"\n======\n";
+              let text2cur = `${cryptName} - ${symbol}\nPrice: ${cryptPrice}$\nChange: ${percent_change_1h}%\nRank: ${rank}`;
+              text2send += text2cur + "\n======\n";
             }
+            text2send += "Last updated: " + body[0].last_updated;
             response = {
               "text": text2send
             }
@@ -258,10 +245,41 @@ function handleMessage(sender_psid, received_message) {
           }
         });
       });
-    }
-    else {
+    } else if (lowerString(received_message.text) == "name") {
+      let url_request = "https://api.coinmarketcap.com/v1/ticker/"
+      let body = "";
+      https_request.get(url_request, res => {
+        res.setEncoding('utf8');
+        res.on("data", data => {
+          body += data;
+        });
+        res.on("end", () => {
+          if (body !== null || typeof body !== "undefined") {
+            body = JSON.parse(body);
+            let text2send = "";
+            for (let i = 0; i < body.length; i++) {
+              let cryptName = body[i].name;
+              let symbol = body[i].symbol;
+              let rank = body[i].rank;
+              let text2cur = `Rank ${rank}: ${cryptName}`;
+              text2send += text2cur + "\n";
+            }
+            text2send += "Last updated: " + body[0].last_updated;
+            response = {
+              "text": text2send
+            }
+            console.log(response);
+            callSendAPI(sender_psid, response);
+          } else {
+            response = {
+              "text": `Something went wrong!!!`
+            }
+          }
+        });
+      });
+    } else {
       response = {
-        "text": `Welcome to Clown9\n - Type \"subcribe\" to get BitConnect exchange every 5 minutes\n - Type \"bitcoin\",\"bitconnect\",\"ripple\",\"ethereum\",\"bitcoin-cash\"\n- Type a number to get the one at that rank`
+        "text": `Welcome to Bit fuel\n - Type \"subcribe\" to get BitConnect exchange every 5 minutes and \"unsubcribe\" to stop\n Type \"name\" to get name of top 100 coin\nOr try some command below:\n  + [number] - Eg: 1\n  + top [number] - Eg: top 5, top 10\n  + [name] - Eg: bitcoin, ethereum, ripple, bitconnect,...`
       }
       callSendAPI(sender_psid, response);
     }
@@ -304,23 +322,40 @@ function removeUser(userId) {
   }
 }
 
-function checktop(input){
+function checktop(input) {
   var pattern = /(top)[/\s][/\d]/g;
   var result = input.search(pattern);
   return result;
 }
 
-function convertUnixTime(input){
-  var a = new Date(input*1000);
-  var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+function lowerString(input) {
+  return input.toLowerCase();
+}
+
+function convertUnixTime(input) {
+  var a = new Date(input * 1000);
+  var months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
   var year = a.getFullYear();
   var month = months[a.getMonth()];
   var date = a.getDate();
   var hours = a.getHours();
   var minutes = a.getMinutes();
   var seconds = a.getSeconds();
-  var time = date + ' ' + month + ' '+ year + ' ' + hours +':'+minutes+':'+seconds;
-  return(time);
+  var time = date + '/' + month + '/' + year + ' ' + hours + ':' + minutes + ':' + seconds;
+  return (time);
+}
+
+function createMessageViaBody(body) {
+  let cryptName = body[0].name;
+  let symbol = body[0].symbol;
+  let cryptPrice = body[0].price_usd;
+  let percent_change_1h = body[0].percent_change_1h;
+  let percent_change_24h = body[0].percent_change_24h;
+  let percent_change_7d = body[0].percent_change_7d;
+  let rank = body[0].rank;
+  let last_updated = convertUnixTime(body[0].last_updated);
+  let text2send = `${cryptName} - ${symbol}\nPrice: ${cryptPrice}$\nChange 1h: ${percent_change_1h}%\nChange 24h: ${percent_change_24h}\nRank: ${rank}\nLast updated: ${last_updated}`;
+  return text2send;
 }
 /*
 function getMarketDataAPI(cName) {
