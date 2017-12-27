@@ -232,7 +232,7 @@ function handleMessage(sender_psid, received_message) {
               let text2cur = `${cryptName} - ${symbol}\nPrice: ${cryptPrice}$\nChange: ${percent_change_1h}%\nRank: ${rank}`;
               text2send += text2cur + "\n======\n";
             }
-            text2send += "Last updated: " + body[0].last_updated;
+            text2send += "Last updated: " + convertUnixTime(body[0].last_updated);
             response = {
               "text": text2send
             }
@@ -264,7 +264,7 @@ function handleMessage(sender_psid, received_message) {
               let text2cur = `Rank ${rank}: ${cryptName}`;
               text2send += text2cur + "\n";
             }
-            text2send += "Last updated: " + body[0].last_updated;
+            text2send += "Last updated: " + convertUnixTime(body[0].last_updated);
             response = {
               "text": text2send
             }
@@ -354,7 +354,7 @@ function createMessageViaBody(body) {
   let percent_change_7d = body[0].percent_change_7d;
   let rank = body[0].rank;
   let last_updated = convertUnixTime(body[0].last_updated);
-  let text2send = `${cryptName} - ${symbol}\nPrice: ${cryptPrice}$\nChange 1h: ${percent_change_1h}%\nChange 24h: ${percent_change_24h}\nRank: ${rank}\nLast updated: ${last_updated}`;
+  let text2send = `${cryptName} - ${symbol}\nPrice: ${cryptPrice}$\nChange 1h: ${percent_change_1h}%\nChange 24h: ${percent_change_24h}%\nRank: ${rank}\nLast updated: ${last_updated}`;
   return text2send;
 }
 /*
