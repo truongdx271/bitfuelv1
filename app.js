@@ -1,6 +1,6 @@
 'use strict';
 // const PAGE_ACCESS_TOKEN = process.env.PAGE_ACCESS_TOKEN;
-const PAGE_ACCESS_TOKEN = "EAAaHZCCTS0ZBwBAFYuCuXSFUJN9w1jZBoz9tlvTSIOZAWRfrASpw25rkWjj4llZA0BFZCCxtIMqKP5ZCh5QXBm9eu54sw9cHw21FU5K5DRa8Sq45dGHx2LZBJ6vS40h6W254pdaTqvtTGpWE4osEU69oTm7DXjPZAXW9tqClAHGdqXAZDZD";
+const PAGE_ACCESS_TOKEN = "EAAaHZCCTS0ZBwBAH9TQZAz0HfnBVhOzcKwdvDFvp5lycKeVqc7fDYgJZBvlmwj1TcUZCCthrypeLScnzKFQJfmU4iF8ewSTUjRCo7so04l5JVH5fXZAnIYlZAptLn3mnPjhytsoxZBV4QZAFH9c8TcduDP2Kj3ewZAy37lqOf9H7BhNgZDZD";
 // Imports dependencies and set up http server
 const
   request = require('request'),
@@ -148,7 +148,7 @@ function handleMessage(sender_psid, received_message) {
     // Create the payload for a basic text message, which
     // will be added to the body of our request to the Send API
     if (list_coin.indexOf(lowerString(received_message.text)) >= 0) {
-      let url_request = "https://api.coinmarketcap.com/v1/ticker/" + lowerString(received_message.text) + "/";
+      let url_request = "https://api.coinmarketcap.com/v1/ticker/" + lowerString(received_message.text.replace(" ","-")) + "/";
       let body = "";
       https_request.get(url_request, res => {
         res.setEncoding('utf8');
@@ -426,7 +426,8 @@ function callSendAPI(sender_psid, response) {
       "id": sender_psid
     },
     "message": response
-  }
+  };
+  console.log("sending");
 
   // Send the HTTP request to the Messenger Platform
   request({
